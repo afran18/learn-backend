@@ -1,0 +1,17 @@
+{
+  "name": "learn-backend",
+  "version": "1.0.0",
+  "description": "Hi guys, This is my backend learning journey with Node js.\r I have always dwelled in frontend and starting today i.e 06 Sept 2024, I am starting to learn to code in Backend.\r - Through this journey I plan to start learning from a NodeJS Udemy course thought by Maximilian Schwarzmüller and will be building projects.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "express": "^4.19.2"
+  }
+}
