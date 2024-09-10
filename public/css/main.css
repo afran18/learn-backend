@@ -15,7 +15,6 @@ main {
   margin: auto;
 }
 
-
 form {
   display: inline;
 }
@@ -195,6 +194,17 @@ form {
 .btn:hover,
 .btn:active {
   background-color: #00695c;
+  color: white;
+}
+
+.btn.danger {
+  color: red;
+  border-color: red;
+}
+
+.btn.danger:hover,
+.btn.danger:active {
+  background: red;
   color: white;
 }
 
