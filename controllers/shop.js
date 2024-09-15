@@ -3,10 +3,19 @@ const Product = require('../models/product');
 exports.getProducts = (req, res, next) => {
   Product.findAll()
     .then(products => {
+      // Renders the product list or shop homepage depending on which route is called
       res.render('shop/product-list', {
+        // Uncomment this if you need product listing page
+        // res.render('shop/product-list', {
+        //   prods: products,
+        //   pageTitle: 'All Products',
+        //   path: '/products'
+        // });
+        
+        // Uncomment this for shop homepage
         prods: products,
-        pageTitle: 'All Products',
-        path: '/products'
+        pageTitle: 'Shop',
+        path: '/'
       });
     })
     .catch(err => {
@@ -16,6 +25,8 @@ exports.getProducts = (req, res, next) => {
 
 exports.getProduct = (req, res, next) => {
   const prodId = req.params.productId;
+
+  // Uncomment if you want to fetch product with where clause
   // Product.findAll({ where: { id: prodId } })
   //   .then(products => {
   //     res.render('shop/product-detail', {
@@ -25,6 +36,7 @@ exports.getProduct = (req, res, next) => {
   //     });
   //   })
   //   .catch(err => console.log(err));
+  
   Product.findByPk(prodId)
     .then(product => {
       res.render('shop/product-detail', {
@@ -151,7 +163,7 @@ exports.postOrder = (req, res, next) => {
 
 exports.getOrders = (req, res, next) => {
   req.user
-    .getOrders({include: ['products']})
+    .getOrders({ include: ['products'] })
     .then(orders => {
       res.render('shop/orders', {
         path: '/orders',

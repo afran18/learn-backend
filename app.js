@@ -1,5 +1,4 @@
 const path = require('path');
-
 const express = require('express');
 const bodyParser = require('body-parser');
 
@@ -37,6 +36,7 @@ app.use(shopRoutes);
 
 app.use(errorController.get404);
 
+// Sequelize associations
 Product.belongsTo(User, { constraints: true, onDelete: 'CASCADE' });
 User.hasMany(Product);
 User.hasOne(Cart);
@@ -48,24 +48,24 @@ User.hasMany(Order);
 Order.belongsToMany(Product, { through: OrderItem });
 
 sequelize
+  // Uncomment this if you need to reset your database
   // .sync({ force: true })
   .sync()
   .then(result => {
     return User.findByPk(1);
-    // console.log(result);
   })
   .then(user => {
     if (!user) {
-      return User.create({ name: 'Max', email: 'test@test.com' });
+      return User.create({ name: 'Afran', email: 'afran@email.com' });
     }
     return user;
   })
   .then(user => {
-    // console.log(user);
     return user.createCart();
   })
   .then(cart => {
     app.listen(3000);
+    console.log('Server started on port 3000');
   })
   .catch(err => {
     console.log(err);
