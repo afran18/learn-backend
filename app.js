@@ -1,4 +1,6 @@
 const path = require('path');
+require('dotenv').config();
+
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -19,7 +21,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use((req, res, next) => {
-  User.findById('5baa2528563f16379fc8a610')
+  User.findById('66ec3125d56bf8d780169c9e')
     .then(user => {
       req.user = new User(user.name, user.email, user.cart, user._id);
       next();
