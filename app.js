@@ -16,6 +16,7 @@ app.set('views', 'views');
 // Import routes
 const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
+const authRoutes = require('./routes/auth');
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -38,6 +39,7 @@ app.use((req, res, next) => {
 // Set up routes
 app.use('/admin', adminRoutes);
 app.use(shopRoutes);
+app.use(authRoutes);
 
 // Error handling
 app.use(errorController.get404);
