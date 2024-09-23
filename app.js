@@ -1,74 +1,75 @@
 const path = require('path');
-require('dotenv').config();
 
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const session = require('express-session');
+const MongoDBStore = require('connect-mongodb-session')(session);
 
 const errorController = require('./controllers/error');
-const User = require('./models/user'); // Ensure this path is correct
+const User = require('./models/user');
+require('dotenv').config()
+
+const MONGODB_URI = process.env.MONGODB_URI;
 
 const app = express();
+const store = new MongoDBStore({
+  uri: MONGODB_URI,
+  collection: 'sessions'
+});
 
 app.set('view engine', 'ejs');
 app.set('views', 'views');
 
-// Import routes
 const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
 const authRoutes = require('./routes/auth');
 
-// Middleware
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(
+  session({
+    secret: 'my secret',
+    resave: false,
+    saveUninitialized: false,
+    store: store
+  })
+);
 
-// Middleware to attach user to the request object
 app.use((req, res, next) => {
-  User.findById('66eeb2a25bd7629316fc143f') // Replace with a valid user ID or handle errors
+  if (!req.session.user) {
+    return next();
+  }
+  User.findById(req.session.user._id)
     .then(user => {
-      if (user) {
-        req.user = user; // Use the existing user directly
-      } else {
-        req.user = null; // Handle the case when user is not found
-      }
+      req.user = user;
       next();
     })
     .catch(err => console.log(err));
 });
 
-// Set up routes
 app.use('/admin', adminRoutes);
 app.use(shopRoutes);
 app.use(authRoutes);
 
-// Error handling
 app.use(errorController.get404);
 
-// Database connection and user creation
 mongoose
-  .connect(process.env.MONGODB_URI)
+  .connect(MONGODB_URI)
   .then(result => {
-    console.log('Connected to Database');
-    return User.findOne(); // Return the promise
-  })
-  .then(user => {
-    if (!user) {
-      // Create a new user if one doesn't exist
-      const user = new User({
-        name: "Afran",
-        email: "afran@email.com",
-        cart: {
-          items: []
-        }
-      });
-      return user.save(); // Return the promise
-    }
-  })
-  .then(() => {
-    // Start the server after the user check
-    app.listen(3000, () => {
-      console.log('Server is running on port 3000');
+    User.findOne().then(user => {
+      if (!user) {
+        const user = new User({
+          name: 'Afran',
+          email: 'afran@email.com',
+          cart: {
+            items: []
+          }
+        });
+        user.save();
+      }
     });
+    app.listen(3000);
   })
   .catch(err => {
     console.log(err);
