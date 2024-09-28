@@ -1,7 +1,20 @@
 const bcrypt = require('bcryptjs');
+const nodemailer = require('nodemailer');
+const sendGridTransport = require('nodemailer-sendgrid-transport');
+require('dotenv').config();
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SEND_GRID_API_KEY);
 
 const User = require('../models/user');
 
+console.log("API: ", process.env.SEND_GRID_API_KEY);
+
+
+const transporter = nodemailer.createTransport(sendGridTransport({
+  auth: {
+    api_key : process.env.SEND_GRID_API_KEY
+  }
+}));
 
 exports.getLogin = (req, res, next) => {
   let message = req.flash('error');
@@ -86,12 +99,60 @@ exports.postSignup = (req, res, next) => {
   })
   .then(result => {
     res.redirect('/login');
+    console.log("Email sent");
+    
+    return transporter.sendMail({
+      to: email,
+      from: 'afran.vk18@outlook.com',
+      subject: "Signup succeeded",
+      html: '<h1>User successfully signed up</h1>'
+    });
   })
   .catch( err => {
     console.log(err);    
-  })
-
+  });
 };
+
+// exports.postSignup = (req, res, next) => {
+//   const email = req.body.email;
+//   const password = req.body.password;
+
+//   User.findOne({ email: email })
+//     .then(userDoc => {
+//       if (userDoc) {
+//         req.flash('error', 'Email already exists.');
+//         return res.redirect('/signup');
+//       }
+//       return bcrypt.hash(password, 12);
+//     })
+//     .then(hashedPassword => {
+//       const user = new User({
+//         email: email,
+//         password: hashedPassword,
+//         cart: { items: [] }
+//       });
+//       return user.save();
+//     })
+//     .then(result => {
+//       res.redirect('/login');
+//       console.log('User signed up, sending email...');
+      
+//       const msg = {
+//         to: email,
+//         from: 'shop@node-complete.com',
+//         subject: 'Signup succeeded',
+//         html: '<h1>User successfully signed up!</h1>',
+//       };
+
+//       return sgMail.send(msg);
+//     })
+//     .then(() => {
+//       console.log('Email sent successfully!');
+//     })
+//     .catch(err => {
+//       console.log('Error sending email:', err);
+//     });
+// };
 
 exports.postLogout = (req, res, next) => {
   req.session.destroy(err => {
