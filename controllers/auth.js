@@ -179,39 +179,98 @@ exports.getReset = (req, res, next) => {
 
 exports.postReset = (req, res, next) => {
   crypto.randomBytes(32, (err, buffer) => {
-    if(err) {
-      console.log(err);      
+    if (err) {
+      console.log(err);
       return res.redirect('/reset');
     }
     const token = buffer.toString('hex');
-    User
-    .findOne({email: req.body.email})
+    User.findOne({ email: req.body.email })
+      .then(user => {
+        if (!user) {
+          req.flash('error', 'No account with that email found.');
+          return res.redirect('/reset');
+        }
+        user.resetToken = token;
+        user.resetTokenExpiration = Date.now() + 3600000; // 1 hour expiration
+        console.log('Generated Token:', token); // Log the generated token
+        console.log('Token Expiration Time:', user.resetTokenExpiration);
+        return user.save();
+      })
+      .then(result => {
+        res.redirect('/');
+        return transporter.sendMail({
+          to: req.body.email,
+          from: 'afran.vk18@outlook.com',
+          subject: 'Password Reset',
+          html: `
+            <p>You requested a password reset</p>
+            <p>Click this <a href="http://localhost:3000/reset/${token}">link</a> to reset your password.</p>
+            ${token}
+          `
+        });
+      })
+      .catch(err => {
+        console.log(err);
+      });
+  });
+};
+
+
+exports.getNewPassword = (req, res, next) => {
+  const token = req.params.token;
+  console.log('Token from URL:', token); // Log the token from the URL
+  User.findOne({ resetToken: token, resetTokenExpiration: { $gt: Date.now() } })
     .then(user => {
-      if(!user) {
-        req.flash('error', 'No account with email found.');
+      if (!user) {
+        console.log('No user found for token:', token); // Log if no user found
+        req.flash('error', 'Token is invalid or has expired.');
         return res.redirect('/reset');
       }
-      
-      user.resetToken = token;
-      user.resetTokenExpiration = Date.now() + 3600000;
-      console.log(user.resetToken);
-      console.log(user.resetTokenExpiration);
-      return user.save();
-    })
-    .then(result => {
-      res.redirect('/');
-      return transporter.sendMail({
-        to: req.body.email,
-        from: 'afran.vk18@outlook.com',
-        subject: "Password Reset",
-        html: `
-        <p>You requested for password reset</p>
-        <p>Click this <a href="http://localhost:3000/reset/${token}">link</a> to reset the password</a></p>
-        `
+      let message = req.flash('error');
+      if (message.length > 0) {
+        message = message[0];
+      } else {
+        message = null;
+      }
+      res.render('auth/new-password', {
+        path: '/new-password',
+        pageTitle: 'New Password',
+        errorMessage: message,
+        userId: user._id.toString(),
+        passwordToken: token // Pass the token to the form for the next step
       });
     })
     .catch(err => {
-      console.log(err);      
+      console.log(err);
     });
-  });
+};
+
+
+exports.postNewPassword = (req, res, next) => {
+  const newPassword = req.body.password;
+  const userId = req.body.userId;
+  const passwordToken = req.body.passwordToken;
+  let resetUser;
+
+  User.findOne({
+    resetToken: passwordToken,
+    resetTokenExpiration: {$gt: Date.now()},
+    _id: userId  
+  })
+  .then(user => {
+    resetUser = user;
+    return bcrypt.hash(newPassword, 12)
+  })
+  .then(hashedPassword => {
+    resetUser.password = hashedPassword;
+    resetUser.resetToken = undefined;
+    resetUser.resetTokenExpiration = undefined;
+    return resetUser.save();
+  })
+  .then(result => {
+    res.redirect('/login');
+  })
+  .catch(err => {
+    console.log(err);    
+  })
 }
